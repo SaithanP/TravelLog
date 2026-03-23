@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0d0f" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Field Journal" />
+  <title>Field Journal</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --surface: #15151a;
+      --surface2: #1c1c24;
+      --surface3: #232330;
+      --border: #2a2a38;
+      --border2: #35354a;
+      --accent: #c9a96e;
+      --accent2: #e8c99a;
+      --text: #e8e6f0;
+      --text2: #9b99b0;
+      --text3: #5e5c72;
+      --red: #e05c6a;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+
+    .app {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 16px calc(80px + var(--safe-bottom));
+      padding-top: calc(var(--safe-top));
+    }
+
+    /* ── Header ── */
+    .header {
+      padding: 28px 0 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .logo small {
+      font-style: italic;
+      font-weight: 400;
+      color: var(--text3);
+      font-size: 13px;
+      display: block;
+      font-family: 'DM Sans', sans-serif;
+      margin-top: 2px;
+    }
+
+    .btn-new {
+      flex-shrink: 0;
+      background: var(--accent);
+      color: #0d0d0f;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn-new:active { background: var(--accent2); transform: scale(0.97); }
+
+    /* ── Timeline ── */
+    .timeline { display: flex; flex-direction: column; gap: 8px; }
+
+    /* ── Empty ── */
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 80px 20px;
+      gap: 10px;
+      color: var(--text3);
+      text-align: center;
+    }
+    .empty .icon { font-size: 52px; opacity: 0.35; }
+    .empty h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text2); margin-top: 4px; }
+    .empty p { font-size: 13px; line-height: 1.7; max-width: 260px; }
+    .empty .btn-new { margin-top: 12px; }
+
+    /* ── Day Card ── */
+    .day-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .day-card.open { border-color: var(--border2); }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      transition: background 0.15s;
+    }
+
+    .day-header:active { background: var(--surface2); }
+
+    .date-badge {
+      background: var(--surface3);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 7px 10px;
+      text-align: center;
+      min-width: 48px;
+      flex-shrink: 0;
+    }
+
+    .date-badge .d {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .date-badge .m {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .day-info { flex: 1; min-width: 0; }
+
+    .day-title {
+      font-size: 15px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .day-meta {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      margin-top: 3px;
+    }
+
+    .day-del {
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      transition: color 0.15s;
+      line-height: 1;
+    }
+
+    .day-del:active { color: var(--red); }
+
+    .chevron {
+      color: var(--text3);
+      font-size: 11px;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .day-card.open .chevron { transform: rotate(90deg); }
+
+    /* ── Day Body ── */
+    .day-body {
+      border-top: 1px solid var(--border);
+      padding: 14px 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Location ── */
+    .loc-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .loc-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 12px 10px;
+    }
+
+    .loc-emoji {
+      width: 36px;
+      height: 36px;
+      background: var(--surface3);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .loc-fields { flex: 1; min-width: 0; }
+
+    .loc-name {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .loc-name::placeholder { color: var(--text3); }
+
+    .loc-addr {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 12px;
+      color: var(--text3);
+      font-family: 'DM Mono', monospace;
+      margin-top: 3px;
+    }
+
+    .loc-addr::placeholder { color: var(--text3); opacity: 0.55; }
+
+    .loc-del {
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-size: 15px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 5px;
+      line-height: 1;
+    }
+    .loc-del:active { color: var(--red); }
+
+    /* ── Photos ── */
+    .photo-strip {
+      display: flex;
+      gap: 8px;
+      padding: 0 12px 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .photo-strip::-webkit-scrollbar { display: none; }
+
+    .photo-wrap { position: relative; flex-shrink: 0; }
+
+    .photo-thumb {
+      width: 82px;
+      height: 82px;
+      border-radius: 9px;
+      object-fit: cover;
+      border: 1px solid var(--border2);
+      display: block;
+      cursor: pointer;
+    }
+
+    .photo-rm {
+      position: absolute;
+      top: 4px; right: 4px;
+      width: 20px; height: 20px;
+      background: rgba(0,0,0,0.72);
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .photo-add {
+      width: 82px;
+      height: 82px;
+      border-radius: 9px;
+      border: 1.5px dashed var(--border2);
+      background: var(--surface3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--text3);
+      font-size: 11px;
+      font-family: 'DM Sans', sans-serif;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .photo-add:active { border-color: var(--accent); color: var(--accent); }
+    .photo-add span.cam { font-size: 22px; }
+
+    /* ── Notes ── */
+    .loc-notes {
+      margin: 0 12px 12px;
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 12px;
+    }
+
+    .note-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 2px 0;
+    }
+
+    .note-lbl {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      min-width: 38px;
+    }
+
+    .note-val {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 13px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+    }
+    .note-val::placeholder { color: var(--text3); opacity: 0.65; }
+
+    .note-hr { height: 1px; background: var(--border); margin: 6px 0; }
+
+    .note-memo {
+      width: 100%;
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 12px;
+      color: var(--text2);
+      font-family: 'DM Sans', sans-serif;
+      resize: none;
+      min-height: 60px;
+      line-height: 1.65;
+    }
+    .note-memo::placeholder { color: var(--text3); opacity: 0.65; }
+
+    /* ── Add location ── */
+    .add-loc-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 11px;
+      background: none;
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      color: var(--text3);
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .add-loc-btn:active { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Modal ── */
+    .overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.15s;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 26px 22px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+      animation: slideUp 0.18s ease-out;
+    }
+
+    .modal h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .field { margin-bottom: 14px; }
+
+    .field label {
+      display: block;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 11px 13px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+    }
+    .field input:focus { border-color: var(--accent); }
+    .field input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.55); }
+
+    .modal-btns {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .btn-cancel {
+      background: none;
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 10px 18px;
+      color: var(--text2);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+    }
+    .btn-cancel:active { background: var(--surface2); }
+
+    .btn-add {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      color: #0d0d0f;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+    }
+    .btn-add:active { background: var(--accent2); }
+
+    /* ── Lightbox ── */
+    .lightbox {
+      position: fixed; inset: 0; z-index: 300;
+      background: rgba(0,0,0,0.93);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.15s;
+    }
+
+    .lightbox img {
+      max-width: 96vw;
+      max-height: 90vh;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+
+    .lb-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Emoji picker ── */
+    .emoji-pick {
+      position: fixed; z-index: 250;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      width: 220px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      animation: fadeIn 0.1s;
+    }
+
+    .emoji-opt {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: none;
+      background: none;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.1s;
+    }
+    .emoji-opt:hover { background: var(--surface3); }
+
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <div class="logo">
+      Field Journal
+      <small>travel log</small>
+    </div>
+    <button class="btn-new" onclick="openModal()">+ New Day</button>
+  </header>
+  <div class="timeline" id="timeline"></div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal">
+    <h2>New Day Entry</h2>
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="inp-date" />
+    </div>
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="inp-title" placeholder="e.g. Tokyo Day 1, Arrival…" onkeydown="if(event.key==='Enter')addDay()" />
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModalDirect()">Cancel</button>
+      <button class="btn-add" onclick="addDay()">Add Day</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" style="display:none" onclick="closeLightbox()">
+  <img id="lb-img" src="" alt="Photo" onclick="event.stopPropagation()" />
+  <button class="lb-close" onclick="closeLightbox()">✕</button>
+</div>
+
+<!-- Emoji picker -->
+<div class="emoji-pick" id="emoji-pick" style="display:none"></div>
+
+<script>
+const EMOJIS = ["📍","🏛️","🍜","🍣","☕","🛍️","🌿","🎭","🏖️","🏔️","🚉","🏨","🎪","🌃","🍕","🏞️","🎡","🚢","✈️","🏟️","🎸","🏺","🧁","🍦","🌺"];
+const STORAGE_KEY = "fj_days_v2";
+
+let days = [];
+let emojiTarget = null;
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(days)); } catch(e) {}
+}
+
+function load() {
+  try {
+    const d = localStorage.getItem(STORAGE_KEY);
+    if (d) days = JSON.parse(d);
+  } catch(e) { days = []; }
+}
+
+function genId() { return Math.random().toString(36).slice(2,9); }
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+function fmtDate(str) {
+  if (!str) return { d:"--", m:"---", year:"", full:"" };
+  const [y,mo,dy] = str.split("-").map(Number);
+  const dt = new Date(y, mo-1, dy);
+  return {
+    d: String(dy).padStart(2,"0"),
+    m: dt.toLocaleString("en",{month:"short"}).toUpperCase(),
+    year: y,
+    full: dt.toLocaleString("en",{weekday:"long",month:"long",day:"numeric",year:"numeric"})
+  };
+}
+
+// ─── Modal ───
+function openModal() {
+  document.getElementById("inp-date").value = today();
+  document.getElementById("inp-title").value = "";
+  document.getElementById("modal").style.display = "flex";
+  setTimeout(()=>document.getElementById("inp-title").focus(), 100);
+}
+function closeModal(e) { if (e.target === document.getElementById("modal")) closeModalDirect(); }
+function closeModalDirect() { document.getElementById("modal").style.display = "none"; }
+
+function addDay() {
+  const date = document.getElementById("inp-date").value;
+  if (!date) return;
+  const title = document.getElementById("inp-title").value.trim() || "Untitled Day";
+  const id = genId();
+  days.push({ id, date, title, open: true, locations: [] });
+  days.sort((a,b)=>a.date.localeCompare(b.date));
+  save(); render();
+  closeModalDirect();
+}
+
+// ─── Lightbox ───
+function openLightbox(src) {
+  document.getElementById("lb-img").src = src;
+  document.getElementById("lightbox").style.display = "flex";
+}
+function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
+
+// ─── Emoji picker ───
+function openEmojiPicker(dayId, locId, btn) {
+  emojiTarget = { dayId, locId };
+  const pick = document.getElementById("emoji-pick");
+  pick.innerHTML = EMOJIS.map(e =>
+    `<button class="emoji-opt" onclick="selectEmoji('${e}')">${e}</button>`
+  ).join("");
+  const r = btn.getBoundingClientRect();
+  const top = Math.min(r.bottom + 6, window.innerHeight - 260);
+  const left = Math.min(r.left, window.innerWidth - 228);
+  pick.style.top = top + "px";
+  pick.style.left = left + "px";
+  pick.style.display = "flex";
+}
+function selectEmoji(e) {
+  if (!emojiTarget) return;
+  updateLoc(emojiTarget.dayId, emojiTarget.locId, "emoji", e);
+  document.getElementById("emoji-pick").style.display = "none";
+  emojiTarget = null;
+}
+document.addEventListener("click", e => {
+  const pick = document.getElementById("emoji-pick");
+  if (!pick.contains(e.target) && !e.target.classList.contains("loc-emoji")) {
+    pick.style.display = "none";
+  }
+});
+
+// ─── Data helpers ───
+function getDay(id) { return days.find(d=>d.id===id); }
+function getLoc(dayId, locId) { return getDay(dayId)?.locations.find(l=>l.id===locId); }
+
+function toggleDay(id) {
+  const d = getDay(id);
+  if (d) { d.open = !d.open; save(); render(); }
+}
+
+function deleteDay(id) {
+  if (!confirm("Delete this day?")) return;
+  days = days.filter(d=>d.id!==id);
+  save(); render();
+}
+
+function addLocation(dayId) {
+  const d = getDay(dayId);
+  if (!d) return;
+  d.locations.push({ id: genId(), name:"", address:"", emoji: EMOJIS[Math.floor(Math.random()*EMOJIS.length)], photos:[], price:"", memo:"" });
+  save(); render();
+  setTimeout(()=>{
+    const inputs = document.querySelectorAll(`[data-day="${dayId}"] .loc-name`);
+    if (inputs.length) inputs[inputs.length-1].focus();
+  },50);
+}
+
+function deleteLocation(dayId, locId) {
+  const d = getDay(dayId);
+  if (!d) return;
+  d.locations = d.locations.filter(l=>l.id!==locId);
+  save(); render();
+}
+
+function updateLoc(dayId, locId, field, val) {
+  const l = getLoc(dayId, locId);
+  if (l) { l[field] = val; save(); }
+}
+
+function handlePhoto(dayId, locId, files) {
+  Array.from(files).forEach(file => {
+    const r = new FileReader();
+    r.onload = e => {
+      const l = getLoc(dayId, locId);
+      if (l) {
+        l.photos.push({ id: genId(), src: e.target.result, name: file.name });
+        save(); render();
+      }
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+function removePhoto(dayId, locId, photoId) {
+  const l = getLoc(dayId, locId);
+  if (l) { l.photos = l.photos.filter(p=>p.id!==photoId); save(); render(); }
+}
+
+// ─── Render ───
+function render() {
+  const tl = document.getElementById("timeline");
+
+  if (days.length === 0) {
+    tl.innerHTML = `
+      <div class="empty">
+        <div class="icon">🗺️</div>
+        <h2>Your journal is empty</h2>
+        <p>Tap "+ New Day" to start logging your locations, photos, and notes.</p>
+        <button class="btn-new" onclick="openModal()">+ Add First Day</button>
+      </div>`;
+    return;
+  }
+
+  tl.innerHTML = days.map(day => {
+    const fmt = fmtDate(day.date);
+    const locCount = day.locations.length;
+    const photoCount = day.locations.reduce((s,l)=>s+l.photos.length,0);
+
+    const locsHtml = day.open ? day.locations.map(loc => `
+      <div class="loc-card">
+        <div class="loc-top">
+          <div class="loc-emoji" onclick="openEmojiPicker('${day.id}','${loc.id}',this)">${loc.emoji}</div>
+          <div class="loc-fields">
+            <input class="loc-name" placeholder="Place name…" value="${esc(loc.name)}"
+              oninput="updateLoc('${day.id}','${loc.id}','name',this.value)" />
+            <input class="loc-addr" placeholder="Address or area…" value="${esc(loc.address)}"
+              oninput="updateLoc('${day.id}','${loc.id}','address',this.value)" />
+          </div>
+          <button class="loc-del" onclick="deleteLocation('${day.id}','${loc.id}')">✕</button>
+        </div>
+
+        <div class="photo-strip">
+          ${loc.photos.map(p => `
+            <div class="photo-wrap">
+              <img class="photo-thumb" src="${p.src}" alt="${esc(p.name)}" onclick="openLightbox('${p.src}')" />
+              <button class="photo-rm" onclick="removePhoto('${day.id}','${loc.id}','${p.id}')">✕</button>
+            </div>
+          `).join("")}
+          <label class="photo-add">
+            <span class="cam">📷</span>
+            <span>Add photo</span>
+            <input type="file" accept="image/*" multiple style="display:none"
+              onchange="handlePhoto('${day.id}','${loc.id}',this.files)" />
+          </label>
+        </div>
+
+        <div class="loc-notes">
+          <div class="note-row">
+            <span class="note-lbl">Price</span>
+            <input class="note-val" placeholder="e.g. $12 / Free…" value="${esc(loc.price)}"
+              oninput="updateLoc('${day.id}','${loc.id}','price',this.value)" />
+          </div>
+          <div class="note-hr"></div>
+          <textarea class="note-memo" placeholder="Memo — hours, tips, what to order…"
+            oninput="updateLoc('${day.id}','${loc.id}','memo',this.value)">${esc(loc.memo)}</textarea>
+        </div>
+      </div>
+    `).join("") + `
+      <button class="add-loc-btn" onclick="addLocation('${day.id}')">＋ Add location</button>
+    ` : "";
+
+    return `
+      <div class="day-card ${day.open ? "open" : ""}" data-day="${day.id}">
+        <div class="day-header" onclick="toggleDay('${day.id}')">
+          <div class="date-badge">
+            <div class="d">${fmt.d}</div>
+            <div class="m">${fmt.m}</div>
+          </div>
+          <div class="day-info">
+            <div class="day-title">${esc(day.title)}</div>
+            <div class="day-meta">${fmt.year} · ${locCount} place${locCount!==1?"s":""}${photoCount>0?" · "+photoCount+" photo"+(photoCount!==1?"s":""):""}</div>
+          </div>
+          <button class="day-del" onclick="event.stopPropagation();deleteDay('${day.id}')">🗑</button>
+          <span class="chevron">▶</span>
+        </div>
+        ${day.open ? `<div class="day-body">${locsHtml}</div>` : ""}
+      </div>
+    `;
+  }).join("");
+}
+
+function esc(str) {
+  return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ─── Service Worker (for offline) ───
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+
+// ─── Init ───
+load();
+render();
+</script>
+</body>
+</html>
