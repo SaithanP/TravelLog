@@ -1,4 +1,4 @@
-const CACHE = "fj-v1";
+const CACHE = "fj-v3";
 const ASSETS = ["./index.html", "./manifest.json"];
 
 self.addEventListener("install", e => {
@@ -16,6 +16,11 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
+  // Don't cache map tiles - always fetch fresh
+  if (e.request.url.includes("tile.openstreetmap.org")) {
+    e.respondWith(fetch(e.request).catch(() => new Response("", { status: 503 })));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match("./index.html")))
   );
